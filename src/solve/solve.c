@@ -1,17 +1,18 @@
 #include <math.h>
 #include <string.h>
 #include <mpi.h>
+#include <stdio.h>
 
 #include "../array/array.h"
 
-static void setRowsPerProcessor(
+static void setRowsPerProcess(
     const int rows,
-    const int numProcesses,
+    const int numProcessors,
     int * const rowsPerProcess
 )
 {
     for (int count = 0; count < rows; count++) {
-        rowsPerProcess[count % numProcesses] += 1;
+        rowsPerProcess[count % numProcessors] += 1;
     }
 }
 
@@ -81,52 +82,59 @@ int solve(
     const int rows,
     const int cols,
     const double precision,
-    const int numProcesses,
-    const int processId
+    const int numProcessors,
+    const int rank
 )
 {
+    // This separates problem by rows, so cannot use more processes than rows
+    if (numProcessors > rows) {
+        numProcessors = rows;
+    }
+
     double ** const newValues = createTwoDDoubleArray(rows, cols);
-    int rowsPerProcess[numProcesses];
+    int rowsPerProcess[numProcessors];
     memset(rowsPerProcess, 0, sizeof rowsPerProcess);
 
-    setRowsPerProcessor(rows, numProcesses, rowsPerProcess);
+    setRowsPerProcess(rows, numProcessors, rowsPerProcess);
 
-    int displs[numProcesses];
+    int displs[numProcessors];
     int sum = 0;
-    for (int i = 0; i < numProcesses; i++) {
+    for (int i = 0; i < numProcessors; i++) {
         displs[i] += sum;
         sum += rowsPerProcess[i];
     }
 
-    const int startRow = displs[processId];
+    const int startRow = displs[rank];
 
     /* create a datatype to describe the subarrays of the global array */
     int sizes[2]    = {rows, cols};         /* global size */
-    int subsizes[2] = {rowsPerProcess[numProcesses], cols};     /* local size */
-    int starts[2]   = {0, 0};                        /* where this one starts */
+    int subsizes[2] = {rowsPerProcess[numProcessors], cols};     /* local size */
+    int starts[2]   = {startRow, 0};                        /* where this one starts */
     MPI_Datatype type, subarrtype;
     MPI_Type_create_subarray(2, sizes, subsizes, starts, MPI_ORDER_C, MPI_DOUBLE, &type);
     // set extent to one row
     MPI_Type_create_resized(type, 0, cols*sizeof(double), &subarrtype);
     MPI_Type_commit(&subarrtype);
 
+    return 0;
+
     int solved;
     while (!solved) {
         solved = 1;
 
-        // startRow and rowsPerProcess[processId] are different for each process
+        // startRow and rowsPerProcess[rank] are different for each process
         relaxRows(
             values,
             rows,
             cols,
             startRow,
-            rowsPerProcess[processId],
+            rowsPerProcess[rank],
             precision
         );
 
         MPI_Allgatherv(
             &(values[0][0]),
-            rowsPerProcess[processId] * cols,
+            rowsPerProcess[rank] * cols,
             MPI_DOUBLE,
             newValues,
             rowsPerProcess,

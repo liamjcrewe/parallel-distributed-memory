@@ -27,13 +27,13 @@
 /**
  * Checks if the given processorId is the 'main' thread (rank 0)
  *
- * @param  processId   The id of the process to check
+ * @param  rank   The id of the process to check
  *
- * @return             1 if main (processId is 0), 0 otherwise
+ * @return             1 if main (rank is 0), 0 otherwise
  */
-static int isMainThread(const int processId)
+static int isMainThread(const int rank)
 {
-    return processId == 0;
+    return rank == 0;
 }
 
 /**
@@ -61,16 +61,17 @@ static int runSolve(
     const int problemId,
     const double precision,
     const int numProcessors,
-    const int processId
+    const int rank
 )
 {
     const int rows = getProblemRows(problemId);
+    const int cols = rows + 1;
 
-    double ** const values = createTwoDDoubleArray(rows, rows + 1);
+    double ** const values = createTwoDDoubleArray(rows, cols);
     const int result = fillProblemArray(values, problemId);
 
     if (result == -1) {
-        if (isMainThread(processId)) {
+        if (isMainThread(rank)) {
             printf(INVALID_PROBLEM_ID);
         }
 
@@ -79,7 +80,7 @@ static int runSolve(
 
     FILE * f;
 
-    if (isMainThread(processId)) {
+    if (isMainThread(rank)) {
         f = fopen("./output.txt", "w");
 
         // Log input
@@ -91,16 +92,17 @@ static int runSolve(
     int error = solve(
         values,
         rows,
+        cols,
         precision,
         numProcessors,
-        processId
+        rank
     );
 
     if (error) {
         printf(ERROR, error);
     }
 
-    if (isMainThread(processId)) {
+    if (isMainThread(rank)) {
         // Log solution
        fprintf(f, "Solution:\n");
        write2dDoubleArray(f, values, rows);
@@ -139,7 +141,7 @@ int main(int argc, char *argv[])
         MPI_Abort(MPI_COMM_WORLD, error);
     }
 
-    int numProcessors, processId;
+    int numProcessors, rank;
 
     error = MPI_Comm_size(MPI_COMM_WORLD, &numProcessors);
 
@@ -149,7 +151,7 @@ int main(int argc, char *argv[])
         MPI_Abort(MPI_COMM_WORLD, error);
     }
 
-	error = MPI_Comm_rank(MPI_COMM_WORLD, &processId);
+	error = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if (error) {
         printf(MPI_ERROR, error);
@@ -158,7 +160,7 @@ int main(int argc, char *argv[])
     }
 
     if (helpFlagSet(argc, argv)) {
-        if (isMainThread(processId)) {
+        if (isMainThread(rank)) {
             printf(HELP);
         }
 
@@ -168,7 +170,7 @@ int main(int argc, char *argv[])
     }
 
     if (argc != 3) {
-        if (isMainThread(processId)) {
+        if (isMainThread(rank)) {
             printf(INVALID_NUM_ARGS);
         }
 
@@ -179,7 +181,7 @@ int main(int argc, char *argv[])
     const double precision = atof(argv[2]);
 
     if (problemId <= 0) {
-        if (isMainThread(processId)) {
+        if (isMainThread(rank)) {
             printf(INVALID_PROBLEM_ID);
         }
 
@@ -187,14 +189,14 @@ int main(int argc, char *argv[])
     }
 
     if (precision <= 0) {
-        if (isMainThread(processId)) {
+        if (isMainThread(rank)) {
             printf(INVALID_PRECISION);
         }
 
         MPI_Abort(MPI_COMM_WORLD, -1);
     }
 
-    int res = runSolve(problemId, precision, numProcessors, processId);
+    int res = runSolve(problemId, precision, numProcessors, rank);
 
     error = MPI_Finalize();
 
