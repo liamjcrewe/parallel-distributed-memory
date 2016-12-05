@@ -4,5 +4,6 @@ int solve(
     const int cols,
     const double precision,
     const int numProcessors,
+    const int rowsPerProcessor,
     const int rank
 );
