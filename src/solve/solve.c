@@ -5,31 +5,20 @@
 
 #include "../array/array.h"
 
-static void setRowsPerProcess(
-    const int rows,
-    const int numProcessors,
-    int * const rowsPerProcess
-)
-{
-    for (int count = 0; count < rows; count++) {
-        rowsPerProcess[count % numProcessors] += 1;
-    }
-}
-
 static void relaxRows(
     double ** const values,
     const int rows,
     const int cols,
-    const int startRow,
+    const int startRowIndex,
     const int rowsToRelax,
     const int precision
 )
 {
     int rowIndex;
-    int newValue;
+    double newValue;
 
-    for (int row = startRow; row < startRow + rowsToRelax; row++) {
-        rowIndex = (int) values[row][cols];
+    for (int row = startRowIndex; row < startRowIndex + rowsToRelax; row++) {
+        rowIndex = (int) values[row][cols - 1];
         if (rowIndex == 0 || rowIndex == rows - 1) {
             continue;
         }
@@ -60,6 +49,11 @@ static int updateValues(
     for (int row = 1; row < rows - 1; row++) {
         rowIndex = (int) newValues[row][cols - 1];
 
+        // Skip padding rows
+        if (rowIndex == 0) {
+            break;
+        }
+
         if (doubleArraysEqual(values[rowIndex], newValues[row], cols)) {
             continue;
         }
@@ -83,66 +77,75 @@ int solve(
     const double precision,
     const int numProcessors,
     const int rowsPerProcessor,
-    const int rank
+    const int rank,
+    MPI_Comm running_comm
 )
 {
     double ** const newValues = createTwoDDoubleArray(rows, cols);
 
     int displs[numProcessors];
-    int sendCounts[numProcessors]
+    int sendCounts[numProcessors];
 
     for (int i = 0; i < numProcessors; i++) {
-        sendCounts[i] = rowsPerProcessor;
+        sendCounts[i] = 1;
         displs[i] = i * rowsPerProcessor;
     }
 
-    const int startRow = rank * rowsPerProcessor;
+    const int startRowIndex = rank * rowsPerProcessor;
 
     /* create a datatype to describe the subarrays of the global array */
     int sizes[2]    = {rows, cols};                 /* global size */
     int subsizes[2] = {rowsPerProcessor, cols};     /* local size */
-    int starts[2]   = {startRow, 0};                /* where this one starts */
+    int starts[2]   = {0, 0};                /* where this one starts */
     MPI_Datatype type, subarrtype;
-    MPI_Type_create_subarray(2, sizes, subsizes, starts, MPI_ORDER_C, MPI_DOUBLE, &type);
-    // Set extent to one row
-    MPI_Type_create_resized(type, 0, cols * sizeof(double), &subarrtype);
-    MPI_Type_commit(&subarrtype);
 
-    int solved;
     int error;
 
-    while (!solved) {
-        solved = 1;
+    error = MPI_Type_create_subarray(2, sizes, subsizes, starts, MPI_ORDER_C, MPI_DOUBLE, &type);
+    // Set extent to one row
+    error = MPI_Type_create_resized(type, 0, cols * sizeof(double), &subarrtype);
+    error = MPI_Type_commit(&subarrtype);
 
-        // startRow and rowsPerProcess are different for each process
+    if (error) {
+        return error;
+    }
+
+    int solved = 0;
+
+    while (!solved) {
+        // startRowIndex is different for each process
         relaxRows(
             values,
             rows,
             cols,
-            startRow,
+            startRowIndex,
             rowsPerProcessor,
             precision
         );
 
         error = MPI_Allgatherv(
-            &(values[0][0]),
+            values[startRowIndex],
             rowsPerProcessor * cols,
             MPI_DOUBLE,
-            newValues,
+            newValues[0],
             sendCounts,
             displs,
             subarrtype,
-            MPI_COMM_WORLD
+            running_comm
         );
 
         if (error) {
             return error;
         }
 
-        solved = updateValues(values, newValues, rows, cols, precision);
+        solved = updateValues(values, newValues, rows, cols);
+
+        MPI_Comm_split(running_comm, solved, rank, &running_comm);
     }
 
     freeTwoDDoubleArray(newValues, rows);
+
+    MPI_Type_free(&subarrtype);
 
     return 0;
 }

@@ -100,8 +100,13 @@ static int runSolve(
         numProcessors = totalRows / rowsPerProcessor;
     }
 
+    int shouldRun = rank < numProcessors;
+
+    MPI_Comm running_comm;
+    MPI_Comm_split(MPI_COMM_WORLD, shouldRun, rank, &running_comm);
+
     // Not using these processors, so just return
-    if (rank >= numProcessors) {
+    if (!shouldRun) {
         return 0;
     }
 
@@ -125,7 +130,7 @@ static int runSolve(
 
     // Fill padding rows with 0.0
     for (int row = problemRows; row < totalRows; row++) {
-        memset(result[row], 0.0, cols);
+        memset(values[row], 0.0, cols);
     }
 
     FILE * f;
@@ -145,7 +150,8 @@ static int runSolve(
         precision,
         numProcessors,
         rowsPerProcessor,
-        rank
+        rank,
+        running_comm
     );
 
     if (error) {
@@ -166,6 +172,8 @@ static int runSolve(
 
     // Free memory
     freeTwoDDoubleArray(values, totalRows);
+
+    MPI_Comm_free(&running_comm);
 
     return error ? error : 0;
 }
