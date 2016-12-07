@@ -184,15 +184,6 @@ static int runSolve(
 
 int main(int argc, char *argv[])
 {
-    // Help CLI
-    if (helpFlagSet(argc, argv)) {
-        if (isMainThread(rank)) {
-            printf(HELP);
-        }
-
-        return 0;
-    }
-
     int error;
 
     // Init MPI and set up
@@ -226,6 +217,17 @@ int main(int argc, char *argv[])
         MPI_Finalize();
 
         return error;
+    }
+
+    // Help CLI
+    if (helpFlagSet(argc, argv)) {
+        if (isMainThread(rank)) {
+            printf(HELP);
+        }
+
+        MPI_Finalize();
+
+        return 0;
     }
 
     // Parse and validate args
