@@ -86,7 +86,7 @@ static int runSolve(
     int leftoverRows = problemRows % numProcessors;
     int totalRows = problemRows;
 
-    int rowsPerProcessor = (problemRows - leftoverRows / numProcessors);
+    int rowsPerProcessor = (problemRows - leftoverRows) / numProcessors;
 
     // if number of rows not divisible by number of processors, we need to pad
     if (leftoverRows) {
