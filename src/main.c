@@ -57,17 +57,62 @@ static int helpFlagSet(int argc, char *argv[])
     return 0;
 }
 
+static int roundToMultiple(const int input, const int multiple)
+{
+    const int remainder = input % multiple;
+
+    if (!remainder) {
+        return input;
+    }
+
+    return input + multiple - remainder;
+}
+
 static int runSolve(
     const int problemId,
     const double precision,
-    const int numProcessors,
+    int numProcessors,
     const int rank
 )
 {
-    const int rows = getProblemRows(problemId);
-    const int cols = rows + 1;
+    const int problemRows = getProblemDimension(problemId);
+    const int cols = problemRows + 1;
 
-    double ** const values = createTwoDDoubleArray(rows, cols);
+    // This separates problem by rows, so cannot use more processes than rows
+    if (numProcessors > problemRows) {
+        numProcessors = problemRows;
+    }
+
+    int leftoverRows = problemRows % numProcessors;
+    int totalRows = problemRows;
+
+    int rowsPerProcessor = (problemRows - leftoverRows) / numProcessors;
+
+    // if number of rows not divisible by number of processors, we need to pad
+    if (leftoverRows) {
+        // we have leftover rows, so need to do one more row per processor
+        rowsPerProcessor++;
+
+        // Round number of rows to a multiple of rowsPerProcessor
+        totalRows = roundToMultiple(problemRows, rowsPerProcessor);
+
+        // Only use enough processors to cover all the rows
+        numProcessors = totalRows / rowsPerProcessor;
+    }
+
+    int shouldRun = rank < numProcessors;
+
+    MPI_Comm running_comm;
+    MPI_Comm_split(MPI_COMM_WORLD, shouldRun, rank, &running_comm);
+
+    // Not using these processors, so just return
+    if (!shouldRun) {
+        return 0;
+    }
+
+    // Create problem array, including padding rows
+    double ** const values = createTwoDDoubleArray(totalRows, cols);
+    // Load problem into problem array
     const int result = fillProblemArray(values, problemId);
 
     if (result == -1) {
@@ -78,6 +123,16 @@ static int runSolve(
         return -1;
     }
 
+    // Add index of each row as the last element
+    for (int row = 0; row < problemRows; row++) {
+        values[row][cols - 1] = (double) row;
+    }
+
+    // Fill padding rows with 0.0
+    for (int row = problemRows; row < totalRows; row++) {
+        memset(values[row], 0.0, cols);
+    }
+
     FILE * f;
 
     if (isMainThread(rank)) {
@@ -85,33 +140,40 @@ static int runSolve(
 
         // Log input
         fprintf(f, "Input:\n");
-        write2dDoubleArray(f, values, rows);
+        write2dDoubleArray(f, values, problemRows);
     }
 
-    /**** add index of each row as last element of problem array ****/
     int error = solve(
         values,
-        rows,
+        totalRows,
         cols,
         precision,
         numProcessors,
-        rank
+        rowsPerProcessor,
+        rank,
+        running_comm
     );
 
     if (error) {
+        /*
+         * Print but don't return. We still want to output whatever solution we
+         * got to below, and clean up memory and file handle.
+         */
         printf(ERROR, error);
     }
 
     if (isMainThread(rank)) {
         // Log solution
-       fprintf(f, "Solution:\n");
-       write2dDoubleArray(f, values, rows);
+        fprintf(f, "Solution:\n");
+        write2dDoubleArray(f, values, problemRows);
 
-       fclose(f);
+        fclose(f);
     }
 
     // Free memory
-    freeTwoDDoubleArray(values, rows);
+    freeTwoDDoubleArray(values, totalRows);
+
+    MPI_Comm_free(&running_comm);
 
     return error ? error : 0;
 }
@@ -138,7 +200,9 @@ int main(int argc, char *argv[])
     if (error) {
         printf(MPI_ERROR, error);
 
-        MPI_Abort(MPI_COMM_WORLD, error);
+        MPI_Finalize();
+
+        return error;
     }
 
     int numProcessors, rank;
@@ -148,7 +212,9 @@ int main(int argc, char *argv[])
     if (error) {
         printf(MPI_ERROR, error);
 
-        MPI_Abort(MPI_COMM_WORLD, error);
+        MPI_Finalize();
+
+        return error;
     }
 
 	error = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -156,9 +222,12 @@ int main(int argc, char *argv[])
     if (error) {
         printf(MPI_ERROR, error);
 
-        MPI_Abort(MPI_COMM_WORLD, error);
+        MPI_Finalize();
+
+        return error;
     }
 
+    // Help CLI
     if (helpFlagSet(argc, argv)) {
         if (isMainThread(rank)) {
             printf(HELP);
@@ -169,12 +238,15 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    // Parse and validate args
     if (argc != 3) {
         if (isMainThread(rank)) {
             printf(INVALID_NUM_ARGS);
         }
 
-        MPI_Abort(MPI_COMM_WORLD, -1);
+        MPI_Finalize();
+
+        return -1;
     }
 
     const int problemId = atoi(argv[1]);
@@ -185,7 +257,9 @@ int main(int argc, char *argv[])
             printf(INVALID_PROBLEM_ID);
         }
 
-        MPI_Abort(MPI_COMM_WORLD, -1);
+        MPI_Finalize();
+
+        return -1;
     }
 
     if (precision <= 0) {
@@ -193,17 +267,26 @@ int main(int argc, char *argv[])
             printf(INVALID_PRECISION);
         }
 
-        MPI_Abort(MPI_COMM_WORLD, -1);
+        MPI_Finalize();
+
+        return -1;
     }
 
+    // Solve and clean up
     int res = runSolve(problemId, precision, numProcessors, rank);
+
+    if (res) {
+        printf(MPI_ERROR, res);
+
+        return res;
+    }
 
     error = MPI_Finalize();
 
     if (error) {
         printf(MPI_ERROR, error);
 
-        MPI_Abort(MPI_COMM_WORLD, error);
+        return error;
     }
 
     return res;

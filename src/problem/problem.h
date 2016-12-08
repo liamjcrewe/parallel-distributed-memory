@@ -1,12 +1,12 @@
 /**
- * Get the number of rows of the specified problem
+ * Get the dimension of the specified problem
  *
  * @param  problemId The ID of the problem
  *
  * @return           The integer dimension of the specified problem, or
  *                   -1 if no problem exists for the given problemId
  */
-int getProblemRows(const int problemId);
+int getProblemDimension(const int problemId);
 
 /**
  * Fill the given two dimensional array with the values of the specified problem

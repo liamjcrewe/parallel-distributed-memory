@@ -12,10 +12,12 @@
  */
 double **createTwoDDoubleArray(const int rows, const int cols)
 {
+    double *doubles = (double *)malloc(rows * cols * sizeof(double));
+
     double **createdRows = (double **)malloc(rows * sizeof(double*));
 
     for (int row = 0; row < rows; row++) {
-        createdRows[row] = (double *)malloc(cols * sizeof(double));
+        createdRows[row] = &(doubles[row * cols]);
     }
 
     return createdRows;
@@ -29,9 +31,7 @@ double **createTwoDDoubleArray(const int rows, const int cols)
  */
 void freeTwoDDoubleArray(double **array, const int rows)
 {
-    for(int row = 0; row < rows; row++) {
-        free(array[row]);
-    }
+    free(&(array[0][0]));
 
     free(array);
 }

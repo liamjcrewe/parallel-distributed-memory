@@ -4,5 +4,7 @@ int solve(
     const int cols,
     const double precision,
     const int numProcessors,
-    const int rank
+    const int rowsPerProcessor,
+    const int rank,
+    MPI_Comm running_comm
 );
