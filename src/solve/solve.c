@@ -11,7 +11,7 @@ static void relaxRows(
     const int cols,
     const int startRowIndex,
     const int rowsToRelax,
-    const int precision
+    const double precision
 )
 {
     int rowIndex;
