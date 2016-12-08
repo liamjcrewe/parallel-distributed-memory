@@ -1,0 +1,20 @@
+#!/bin/sh
+# Account & partition (must have these)
+#SBATCH --account=cm30225
+#SBATCH --partition=teaching
+# Name of job (optional)
+#SBATCH --job-name=lc547_solve
+# one node
+#SBATCH --nodes=1
+# 16 tasks per node
+#SBATCH --ntasks-per-node=16
+# time of job
+#SBATCH --time=00:00:30
+
+# Load openmpi
+module load openmpi/gcc
+
+# Run the program
+CMD="mpirun -np $SLURM_NTASKS bin/solve <PROBLEM_ID> <PRECISION>"
+echo $CMD >> time.txt
+time (eval $CMD) 2>> time.txt
