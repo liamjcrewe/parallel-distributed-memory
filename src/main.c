@@ -145,6 +145,7 @@ static int runSolve(
 
     int error = solve(
         values,
+        problemRows,
         totalRows,
         cols,
         precision,

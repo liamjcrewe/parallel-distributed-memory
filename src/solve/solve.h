@@ -1,6 +1,7 @@
 int solve(
     double ** const values,
-    const int rows,
+    const int problemRows,
+    const int totalRows,
     const int cols,
     const double precision,
     const int numProcessors,
