@@ -1,0 +1,6 @@
+bin/solve
+bin/solve.dSYM/
+output/
+solve.batch
+time.txt
+
