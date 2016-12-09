@@ -7,7 +7,7 @@
 
 static void relaxRows(
     double ** const values,
-    const int rows,
+    const int problemRows,
     const int cols,
     const int startRowIndex,
     const int rowsToRelax,
@@ -19,7 +19,8 @@ static void relaxRows(
 
     for (int row = startRowIndex; row < startRowIndex + rowsToRelax; row++) {
         rowIndex = (int) values[row][cols - 1];
-        if (rowIndex == 0 || rowIndex == rows - 1) {
+        // Skip first and last row
+        if (rowIndex == 0 || rowIndex == problemRows - 1) {
             continue;
         }
 
@@ -39,14 +40,14 @@ static void relaxRows(
 static int updateValues(
     double ** const values,
     double ** const newValues,
-    const int rows,
+    const int problemRows,
     const int cols
 )
 {
     int rowIndex;
     int solved = 1;
 
-    for (int row = 1; row < rows - 1; row++) {
+    for (int row = 1; row < problemRows - 1; row++) {
         rowIndex = (int) newValues[row][cols - 1];
 
         // Skip padding rows
@@ -72,7 +73,8 @@ static int updateValues(
 
 int solve(
     double ** const values,
-    const int rows,
+    const int problemRows,
+    const int totalRows,
     const int cols,
     const double precision,
     const int numProcessors,
@@ -81,7 +83,7 @@ int solve(
     MPI_Comm running_comm
 )
 {
-    double ** const newValues = createTwoDDoubleArray(rows, cols);
+    double ** const newValues = createTwoDDoubleArray(totalRows, cols);
 
     for (int i = 0; i < totalRows; i++) {
         for (int j = 0; j < cols; j++) {
@@ -100,7 +102,7 @@ int solve(
     const int startRowIndex = rank * rowsPerProcessor;
 
     /* create a datatype to describe the subarrays of the global array */
-    int sizes[2]    = {rows, cols};                 /* global size */
+    int sizes[2]    = {totalRows, cols};                 /* global size */
     int subsizes[2] = {rowsPerProcessor, cols};     /* local size */
     int starts[2]   = {0, 0};                /* where this one starts */
     MPI_Datatype type, subarrtype;
@@ -122,7 +124,7 @@ int solve(
         // startRowIndex is different for each process
         relaxRows(
             newValues,
-            rows,
+            problemRows,
             cols,
             startRowIndex,
             rowsPerProcessor,
@@ -144,10 +146,10 @@ int solve(
             return error;
         }
 
-        solved = updateValues(values, newValues, rows, cols);
+        solved = updateValues(values, newValues, totalRows, cols);
     }
 
-    freeTwoDDoubleArray(newValues, rows);
+    freeTwoDDoubleArray(newValues, totalRows);
 
     MPI_Type_free(&subarrtype);
 
