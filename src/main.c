@@ -12,13 +12,12 @@
              " - Problem ID (1, 2, 3, 4, 5 or 6. See src/problem/problem.c).\n"\
              " - Precision to work to.\n"
 
-#define INVALID_NUM_ARGS "You must specify problem ID, "\
-                         "number of threads and precision.\n"
+#define INVALID_NUM_ARGS "You must specify problem dimension and precision.\n"
 
 #define INVALID_PROBLEM_DIMENSION "Invalid problem dimension given. "\
                                   "Must be an integer greater than 0.\n"
 
-#define INVALID_PRECISION "Precision must be a decimal greater than 0\n"
+#define INVALID_PRECISION "Precision must be a number greater than 0\n"
 
 #define ERROR "Something went wrong. Error code: %d\n"
 
