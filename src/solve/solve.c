@@ -83,6 +83,12 @@ int solve(
 {
     double ** const newValues = createTwoDDoubleArray(rows, cols);
 
+    for (int i = 0; i < totalRows; i++) {
+        for (int j = 0; j < cols; j++) {
+            newValues[i][j] = values[i][j];
+        }
+    }
+
     int displs[numProcessors];
     int sendCounts[numProcessors];
 
@@ -115,7 +121,7 @@ int solve(
     while (!solved) {
         // startRowIndex is different for each process
         relaxRows(
-            values,
+            newValues,
             rows,
             cols,
             startRowIndex,
@@ -124,7 +130,7 @@ int solve(
         );
 
         error = MPI_Allgatherv(
-            values[startRowIndex],
+            newValues[startRowIndex],
             rowsPerProcessor * cols,
             MPI_DOUBLE,
             newValues[0],
@@ -139,8 +145,6 @@ int solve(
         }
 
         solved = updateValues(values, newValues, rows, cols);
-
-        MPI_Comm_split(running_comm, solved, rank, &running_comm);
     }
 
     freeTwoDDoubleArray(newValues, rows);
