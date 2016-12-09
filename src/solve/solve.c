@@ -54,16 +54,16 @@ static int updateValues(
             break;
         }
 
-        if (doubleArraysEqual(values[rowIndex], newValues[row], cols)) {
-            continue;
-        }
-
         for (int col = 1; col < cols - 2; col++) {
-            values[rowIndex][col] = newValues[row][col];
-        }
+            if (values[rowIndex][col] == newValues[row][col]) {
+                continue;
+            }
 
-        if (solved) {
-            solved = 0;
+            values[rowIndex][col] = newValues[row][col];
+
+            if (solved) {
+                solved = 0;
+            }
         }
     }
 

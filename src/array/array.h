@@ -15,14 +15,3 @@ double **createTwoDDoubleArray(const int rows, const int cols);
  * @param dimension The dimension of the two dimensional array to free
  */
 void freeTwoDDoubleArray(double **array, const int dimension);
-
-int doubleArraysEqual(
-    double * const array1,
-    double * const array2,
-    const int dimension
-);
-
-
-
-//NOT USED
-int intArraySum(int * const array, const int start, const int end);
