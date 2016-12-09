@@ -71,10 +71,12 @@ static int roundToMultiple(const int input, const int multiple)
 static int runSolve(
     const int problemDimension,
     const double precision,
-    int numProcessors,
+    int initialNumProcessors,
     const int rank
 )
 {
+    int numProcessors = initialNumProcessors;
+
     // This separates problem by rows, so cannot use more processes than rows
     if (numProcessors > problemDimension) {
         numProcessors = problemDimension;
@@ -128,7 +130,16 @@ static int runSolve(
     FILE * f;
 
     if (isMainThread(rank)) {
-        f = fopen("./output.txt", "w");
+        char fileName[80];
+        sprintf(
+            fileName,
+            "./output/output-%d-%g-%d.txt",
+            problemDimension,
+            precision,
+            initialNumProcessors
+        );
+
+        f = fopen(fileName, "w");
 
         // Log input
         fprintf(f, "Input:\n");
