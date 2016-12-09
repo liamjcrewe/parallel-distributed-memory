@@ -7,8 +7,7 @@
 
 static void relaxRows(
     double ** const newValues,
-    const int problemRows,
-    const int cols,
+    const int problemDimension,
     const int startRowIndex,
     const int rowsToRelax,
     const double precision
@@ -18,11 +17,11 @@ static void relaxRows(
 
     for (int row = startRowIndex; row < startRowIndex + rowsToRelax; row++) {
         // Skip first and last row
-        if (row == 0 || row == problemRows - 1) {
+        if (row == 0 || row == problemDimension - 1) {
             continue;
         }
 
-        for (int col = 1; col < cols - 1; col++) {
+        for (int col = 1; col < problemDimension - 1; col++) {
             newValue = (newValues[row + 1][col] + newValues[row - 1][col] +
                         newValues[row][col + 1] + newValues[row][col - 1]) / 4;
 
@@ -38,14 +37,13 @@ static void relaxRows(
 static int updateValues(
     double ** const values,
     double ** const newValues,
-    const int problemRows,
-    const int cols
+    const int problemDimension
 )
 {
     int solved = 1;
 
-    for (int row = 1; row < problemRows - 1; row++) {
-        for (int col = 1; col < cols - 1; col++) {
+    for (int row = 1; row < problemDimension - 1; row++) {
+        for (int col = 1; col < problemDimension - 1; col++) {
             if (values[row][col] == newValues[row][col]) {
                 continue;
             }
@@ -63,9 +61,8 @@ static int updateValues(
 
 int solve(
     double ** const values,
-    const int problemRows,
+    const int problemDimension,
     const int totalRows,
-    const int cols,
     const double precision,
     const int numProcessors,
     const int rowsPerProcessor,
@@ -73,10 +70,10 @@ int solve(
     MPI_Comm running_comm
 )
 {
-    double ** const newValues = createTwoDDoubleArray(totalRows, cols);
+    double ** const newValues = createTwoDDoubleArray(totalRows, problemDimension);
 
     for (int i = 0; i < totalRows; i++) {
-        for (int j = 0; j < cols; j++) {
+        for (int j = 0; j < problemDimension; j++) {
             newValues[i][j] = values[i][j];
         }
     }
@@ -92,8 +89,8 @@ int solve(
     const int startRowIndex = rank * rowsPerProcessor;
 
     /* create a datatype to describe the subarrays of the global array */
-    int sizes[2]    = {totalRows, cols};                 /* global size */
-    int subsizes[2] = {rowsPerProcessor, cols};     /* local size */
+    int sizes[2]    = {totalRows, problemDimension};                 /* global size */
+    int subsizes[2] = {rowsPerProcessor, problemDimension};     /* local size */
     int starts[2]   = {0, 0};                /* where this one starts */
     MPI_Datatype type, subarrtype;
 
@@ -101,7 +98,7 @@ int solve(
 
     error = MPI_Type_create_subarray(2, sizes, subsizes, starts, MPI_ORDER_C, MPI_DOUBLE, &type);
     // Set extent to one row
-    error = MPI_Type_create_resized(type, 0, cols * sizeof(double), &subarrtype);
+    error = MPI_Type_create_resized(type, 0, problemDimension * sizeof(double), &subarrtype);
     error = MPI_Type_commit(&subarrtype);
 
     if (error) {
@@ -114,8 +111,7 @@ int solve(
         // startRowIndex is different for each process
         relaxRows(
             newValues,
-            problemRows,
-            cols,
+            problemDimension,
             startRowIndex,
             rowsPerProcessor,
             precision
@@ -123,7 +119,7 @@ int solve(
 
         error = MPI_Allgatherv(
             newValues[startRowIndex],
-            rowsPerProcessor * cols,
+            rowsPerProcessor * problemDimension,
             MPI_DOUBLE,
             newValues[0],
             sendCounts,
@@ -136,7 +132,7 @@ int solve(
             return error;
         }
 
-        solved = updateValues(values, newValues, totalRows, cols);
+        solved = updateValues(values, newValues, problemDimension);
     }
 
     freeTwoDDoubleArray(newValues, totalRows);

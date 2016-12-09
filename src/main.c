@@ -15,8 +15,8 @@
 #define INVALID_NUM_ARGS "You must specify problem ID, "\
                          "number of threads and precision.\n"
 
-#define INVALID_PROBLEM_ID "Invalid problem id given. "\
-                           "Must be 1, 2, 3, 4, 5 or 6.\n"
+#define INVALID_PROBLEM_DIMENSION "Invalid problem dimension given. "\
+                                  "Must be an integer greater than 0.\n"
 
 #define INVALID_PRECISION "Precision must be a decimal greater than 0\n"
 
@@ -69,24 +69,21 @@ static int roundToMultiple(const int input, const int multiple)
 }
 
 static int runSolve(
-    const int problemId,
+    const int problemDimension,
     const double precision,
     int numProcessors,
     const int rank
 )
 {
-    const int problemRows = getProblemDimension(problemId);
-    const int cols = problemRows;
-
     // This separates problem by rows, so cannot use more processes than rows
-    if (numProcessors > problemRows) {
-        numProcessors = problemRows;
+    if (numProcessors > problemDimension) {
+        numProcessors = problemDimension;
     }
 
-    int leftoverRows = problemRows % numProcessors;
-    int totalRows = problemRows;
+    int leftoverRows = problemDimension % numProcessors;
+    int totalRows = problemDimension;
 
-    int rowsPerProcessor = (problemRows - leftoverRows) / numProcessors;
+    int rowsPerProcessor = (problemDimension - leftoverRows) / numProcessors;
 
     // if number of rows not divisible by number of processors, we need to pad
     if (leftoverRows) {
@@ -94,7 +91,7 @@ static int runSolve(
         rowsPerProcessor++;
 
         // Round number of rows to a multiple of rowsPerProcessor
-        totalRows = roundToMultiple(problemRows, rowsPerProcessor);
+        totalRows = roundToMultiple(problemDimension, rowsPerProcessor);
 
         // Only use enough processors to cover all the rows
         numProcessors = totalRows / rowsPerProcessor;
@@ -111,21 +108,21 @@ static int runSolve(
     }
 
     // Create problem array, including padding rows
-    double ** const values = createTwoDDoubleArray(totalRows, cols);
+    double ** const values = createTwoDDoubleArray(totalRows, problemDimension);
     // Load problem into problem array
-    const int result = fillProblemArray(values, problemId);
+    const int result = fillProblemArray(values, problemDimension);
 
     if (result == -1) {
         if (isMainThread(rank)) {
-            printf(INVALID_PROBLEM_ID);
+            printf(INVALID_PROBLEM_DIMENSION);
         }
 
         return -1;
     }
 
     // Fill padding rows with 0.0
-    for (int row = problemRows; row < totalRows; row++) {
-        memset(values[row], 0.0, cols);
+    for (int row = problemDimension; row < totalRows; row++) {
+        memset(values[row], 0.0, problemDimension);
     }
 
     FILE * f;
@@ -135,14 +132,13 @@ static int runSolve(
 
         // Log input
         fprintf(f, "Input:\n");
-        write2dDoubleArray(f, values, problemRows);
+        write2dDoubleArray(f, values, problemDimension);
     }
 
     int error = solve(
         values,
-        problemRows,
+        problemDimension,
         totalRows,
-        cols,
         precision,
         numProcessors,
         rowsPerProcessor,
@@ -161,7 +157,7 @@ static int runSolve(
     if (isMainThread(rank)) {
         // Log solution
         fprintf(f, "Solution:\n");
-        write2dDoubleArray(f, values, problemRows);
+        write2dDoubleArray(f, values, problemDimension);
 
         fclose(f);
     }
@@ -245,12 +241,12 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    const int problemId = atoi(argv[1]);
+    const int problemDimension = atoi(argv[1]);
     const double precision = atof(argv[2]);
 
-    if (problemId <= 0) {
+    if (problemDimension <= 0) {
         if (isMainThread(rank)) {
-            printf(INVALID_PROBLEM_ID);
+            printf(INVALID_PROBLEM_DIMENSION);
         }
 
         MPI_Finalize();
@@ -269,7 +265,7 @@ int main(int argc, char *argv[])
     }
 
     // Solve and clean up
-    int res = runSolve(problemId, precision, numProcessors, rank);
+    int res = runSolve(problemDimension, precision, numProcessors, rank);
 
     if (res) {
         printf(MPI_ERROR, res);
