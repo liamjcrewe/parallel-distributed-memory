@@ -12,11 +12,6 @@
  */
 
 #define BASE_DIMENSION 10
-#define PROBLEM_1_DIMENSION 10
-#define PROBLEM_2_DIMENSION 40
-#define PROBLEM_3_DIMENSION 200
-#define PROBLEM_4_DIMENSION 1000
-#define PROBLEM_5_DIMENSION 2000
 
 static const double problem[BASE_DIMENSION][BASE_DIMENSION] = {
     {39.305479, 7.185631, 68.904397, 76.204575, 70.287806, 27.154123, 79.348461, 9.583932, 77.147911, 24.931782},
@@ -32,43 +27,15 @@ static const double problem[BASE_DIMENSION][BASE_DIMENSION] = {
 };
 
 /**
- * Get the dimension of the specified problem
- *
- * @param  problemId The ID of the problem
- *
- * @return           The integer dimension of the specified problem, or
- *                   -1 if no problem exists for the given problemId
- */
-int getProblemDimension(const int problemId)
-{
-    switch (problemId) {
-        case 1:
-            return PROBLEM_1_DIMENSION;
-        case 2:
-            return PROBLEM_2_DIMENSION;
-        case 3:
-            return PROBLEM_3_DIMENSION;
-        case 4:
-            return PROBLEM_4_DIMENSION;
-        case 5:
-            return PROBLEM_5_DIMENSION;
-        default:
-            return -1;
-    }
-}
-
-/**
  * Fill the given two dimensional array with the values of the specified problem
  *
  * @param  values    The array to fill
- * @param  problemId The ID of the problem to copy into values
+ * @param  dimension TBA
  *
  * @return           0 if success, -1 if error
  */
-int fillProblemArray(double ** const values, const int problemId)
+int fillProblemArray(double ** const values, const int problemDimension)
 {
-    const int problemDimension = getProblemDimension(problemId);
-
     if (problemDimension == -1) {
         return -1;
     }
