@@ -15,12 +15,17 @@ static void relaxRows(
 {
     double newValue;
 
-    for (int row = startRowIndex; row < startRowIndex + rowsToRelax; row++) {
-        // Skip first and last row
-        if (row == 0 || row == problemDimension - 1) {
-            continue;
-        }
+    int lastRow = startRowIndex + rowsToRelax;
 
+    // Do not try to relax fixed edge row, or any row past this
+    if (lastRow > problemDimension - 1) {
+        lastRow = problemDimension - 1;
+    }
+
+    // Skip first row
+    int startRow = startRowIndex == 0 ? 1 : startRowIndex;
+
+    for (int row = startRow; row < lastRow; row++) {
         for (int col = 1; col < problemDimension - 1; col++) {
             newValue = (newValues[row + 1][col] + newValues[row - 1][col] +
                         newValues[row][col + 1] + newValues[row][col - 1]) / 4;
