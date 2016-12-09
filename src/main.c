@@ -76,7 +76,7 @@ static int runSolve(
 )
 {
     const int problemRows = getProblemDimension(problemId);
-    const int cols = problemRows + 1;
+    const int cols = problemRows;
 
     // This separates problem by rows, so cannot use more processes than rows
     if (numProcessors > problemRows) {
@@ -121,11 +121,6 @@ static int runSolve(
         }
 
         return -1;
-    }
-
-    // Add index of each row as the last element
-    for (int row = 0; row < problemRows; row++) {
-        values[row][cols - 1] = (double) row;
     }
 
     // Fill padding rows with 0.0
