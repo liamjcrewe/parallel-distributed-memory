@@ -50,11 +50,6 @@ static int updateValues(
     for (int row = 1; row < problemRows - 1; row++) {
         rowIndex = (int) newValues[row][cols - 1];
 
-        // Skip padding rows
-        if (rowIndex == 0) {
-            break;
-        }
-
         for (int col = 1; col < cols - 2; col++) {
             if (values[rowIndex][col] == newValues[row][col]) {
                 continue;
