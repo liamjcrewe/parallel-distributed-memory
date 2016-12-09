@@ -6,7 +6,7 @@
 #include "../array/array.h"
 
 static void relaxRows(
-    double ** const values,
+    double ** const newValues,
     const int problemRows,
     const int cols,
     const int startRowIndex,
@@ -14,25 +14,23 @@ static void relaxRows(
     const double precision
 )
 {
-    int rowIndex;
     double newValue;
 
     for (int row = startRowIndex; row < startRowIndex + rowsToRelax; row++) {
-        rowIndex = (int) values[row][cols - 1];
         // Skip first and last row
-        if (rowIndex == 0 || rowIndex == problemRows - 1) {
+        if (row == 0 || row == problemRows - 1) {
             continue;
         }
 
-        for (int col = 1; col < cols - 2; col++) {
-            newValue = (values[row + 1][col] + values[row - 1][col]
-                        + values[row][col + 1] + values[row][col - 1]) / 4;
+        for (int col = 1; col < cols - 1; col++) {
+            newValue = (newValues[row + 1][col] + newValues[row - 1][col] +
+                        newValues[row][col + 1] + newValues[row][col - 1]) / 4;
 
-            if (fabs(newValue - values[row][col]) < precision) {
+            if (fabs(newValue - newValues[row][col]) < precision) {
                 continue;
             }
 
-            values[row][col] = newValue;
+            newValues[row][col] = newValue;
         }
     }
 }
@@ -44,18 +42,15 @@ static int updateValues(
     const int cols
 )
 {
-    int rowIndex;
     int solved = 1;
 
     for (int row = 1; row < problemRows - 1; row++) {
-        rowIndex = (int) newValues[row][cols - 1];
-
-        for (int col = 1; col < cols - 2; col++) {
-            if (values[rowIndex][col] == newValues[row][col]) {
+        for (int col = 1; col < cols - 1; col++) {
+            if (values[row][col] == newValues[row][col]) {
                 continue;
             }
 
-            values[rowIndex][col] = newValues[row][col];
+            values[row][col] = newValues[row][col];
 
             if (solved) {
                 solved = 0;
