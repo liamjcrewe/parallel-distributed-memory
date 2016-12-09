@@ -15,6 +15,6 @@
 module load openmpi/gcc
 
 # Run the program
-CMD="mpirun -np $SLURM_NTASKS bin/solve <PROBLEM_ID> <PRECISION>"
+CMD="mpirun -np $SLURM_NTASKS bin/solve <PROBLEM_DIMENSION> <PRECISION>"
 echo $CMD >> time.txt
 time (eval $CMD) 2>> time.txt
