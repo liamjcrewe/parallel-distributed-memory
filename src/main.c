@@ -7,18 +7,19 @@
 #include "output/output.h"
 #include "problem/problem.h"
 #include "solve/solve.h"
+#include "test/test.h"
 
 #define HELP "Argument order:\n"\
              " - Problem ID (1, 2, 3, 4, 5 or 6. See src/problem/problem.c).\n"\
-             " - Precision to work to.\n"
+             " - Precision to work to.\n"\
+             " - Optional: [--test|-t] to test achieved solution.\n"
 
-#define INVALID_NUM_ARGS "You must specify problem ID, "\
-                         "number of threads and precision.\n"
+#define INVALID_NUM_ARGS "You must specify problem dimension and precision.\n"
 
 #define INVALID_PROBLEM_DIMENSION "Invalid problem dimension given. "\
                                   "Must be an integer greater than 0.\n"
 
-#define INVALID_PRECISION "Precision must be a decimal greater than 0\n"
+#define INVALID_PRECISION "Precision must be a number greater than 0\n"
 
 #define ERROR "Something went wrong. Error code: %d\n"
 
@@ -57,6 +58,27 @@ static int helpFlagSet(int argc, char *argv[])
     return 0;
 }
 
+/**
+ * Checks if any of the parameters passed via CLI are --test or -t
+ *
+ * @param  argc Number of command line argmuments
+ * @param  argv Array of command line arguments
+ *
+ * @return      1 if true (test flag specified), 0 otherwise
+ */
+static int testFlagSet(int argc, char *argv[])
+{
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "--test") == 0
+            || strcmp(argv[i], "-t") == 0) {
+
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 static int roundToMultiple(const int input, const int multiple)
 {
     const int remainder = input % multiple;
@@ -72,7 +94,8 @@ static int runSolve(
     const int problemDimension,
     const double precision,
     int initialNumProcessors,
-    const int rank
+    const int rank,
+    const int test
 )
 {
     int numProcessors = initialNumProcessors;
@@ -133,7 +156,7 @@ static int runSolve(
         char fileName[80];
         sprintf(
             fileName,
-            "./output/output-%d-%g-%d.txt",
+            "./output/solution-%d-%g-%d.txt",
             problemDimension,
             precision,
             initialNumProcessors
@@ -171,6 +194,33 @@ static int runSolve(
         write2dDoubleArray(f, values, problemDimension);
 
         fclose(f);
+    }
+
+    if (test) {
+        char fileName[80];
+        sprintf(
+            fileName,
+            "./output/test-%d-%g-%d.txt",
+            problemDimension,
+            precision,
+            initialNumProcessors
+        );
+
+        FILE * testFile = fopen(fileName, "w");
+
+        int res = testSolution(values, problemDimension, precision);
+
+        // Log input
+        fprintf(
+            testFile,
+            "Dimension: %d, Precision: %g, Processors: %d, Result: %s.\n",
+            problemDimension,
+            precision,
+            initialNumProcessors,
+            res ? "Pass" : "Fail"
+        );
+
+        fclose(testFile);
     }
 
     // Free memory
@@ -241,8 +291,15 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    int test = 0;
+
+    // Test flag
+    if (testFlagSet(argc, argv) && isMainThread(rank)) {
+        test = 1;
+    }
+
     // Parse and validate args
-    if (argc != 3) {
+    if (argc < 3) {
         if (isMainThread(rank)) {
             printf(INVALID_NUM_ARGS);
         }
@@ -276,7 +333,7 @@ int main(int argc, char *argv[])
     }
 
     // Solve and clean up
-    int res = runSolve(problemDimension, precision, numProcessors, rank);
+    int res = runSolve(problemDimension, precision, numProcessors, rank, test);
 
     if (res) {
         printf(MPI_ERROR, res);

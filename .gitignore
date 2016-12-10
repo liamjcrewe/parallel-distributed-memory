@@ -1,6 +1,5 @@
 bin/solve
 bin/solve.dSYM/
-output/
+output/*.txt
 solve.batch
 time.txt
-
