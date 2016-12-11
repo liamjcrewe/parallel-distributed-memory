@@ -12,11 +12,12 @@ static const double problem[10][10] = {
 };
 
 /**
- * Fill the given two dimensional array with double values. Does this using a
- * predefined 10x10 array of values, and repeating these values for the
- * specified (problemDimension) number of times. Uses modular arithmetic to
- * allow any problem dimension to be generated (does not have to be a multiple
- * of 10).
+ * Fill the given two dimensional array with double values.
+ *
+ * Does this using a predefined 10x10 array of values, and repeating these
+ * values for the specified (problemDimension) number of times. Uses modular
+ * arithmetic to allow any problem dimension to be generated (does not have to
+ * be a multiple of 10).
  *
  * @param  values           The array to fill
  * @param  problemDimension The dimension of the array to fill
