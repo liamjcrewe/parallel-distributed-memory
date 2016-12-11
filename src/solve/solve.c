@@ -39,8 +39,8 @@ static void relaxRows(
     }
 }
 
-static int updateValues(
-    double ** const values,
+static int updateProblem(
+    double ** const problem,
     double ** const newValues,
     const int problemDimension
 )
@@ -49,11 +49,11 @@ static int updateValues(
 
     for (int row = 1; row < problemDimension - 1; row++) {
         for (int col = 1; col < problemDimension - 1; col++) {
-            if (values[row][col] == newValues[row][col]) {
+            if (problem[row][col] == newValues[row][col]) {
                 continue;
             }
 
-            values[row][col] = newValues[row][col];
+            problem[row][col] = newValues[row][col];
 
             if (solved) {
                 solved = 0;
@@ -65,13 +65,13 @@ static int updateValues(
 }
 
 /**
- * Solve the given problem (values) to the given precision in parallel, using
- * the given number of processors.
+ * Solve the given problem to the given precision in parallel, using the given
+ * number of processors.
  *
- * @param  values           The problem to solve (including padding rows)
- * @param  problemRows      The rows of the given values array that are part of
+ * @param  problem           The problem to solve (including padding rows)
+ * @param  problemRows      The rows of the given problem array that are part of
  *                          the problem
- * @param  totalRows        The total rows of the given values array
+ * @param  totalRows        The total rows of the given problem array
  * @param  precision        The precision to solve the problem to
  * @param  numProcessors    The number of processors being used to solve the
  *                          problem
@@ -83,7 +83,7 @@ static int updateValues(
  * @return                  0 if success, error code otherwise
  */
 int solve(
-    double ** const values,
+    double ** const problem,
     const int problemDimension,
     const int totalRows,
     const double precision,
@@ -97,7 +97,7 @@ int solve(
 
     for (int i = 0; i < totalRows; i++) {
         for (int j = 0; j < problemDimension; j++) {
-            newValues[i][j] = values[i][j];
+            newValues[i][j] = problem[i][j];
         }
     }
 
@@ -155,7 +155,7 @@ int solve(
             return error;
         }
 
-        solved = updateValues(values, newValues, problemDimension);
+        solved = updateProblem(problem, newValues, problemDimension);
     }
 
     freeTwoDDoubleArray(newValues);

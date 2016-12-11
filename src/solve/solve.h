@@ -1,11 +1,11 @@
 /**
- * Solve the given problem (values) to the given precision in parallel, using
- * the given number of processors.
+ * Solve the given problem to the given precision in parallel, using the given
+ * number of processors.
  *
- * @param  values           The problem to solve (including padding rows)
- * @param  problemRows      The rows of the given values array that are part of
+ * @param  problem          The problem to solve (including padding rows)
+ * @param  problemRows      The rows of the given problem array that are part of
  *                          the problem
- * @param  totalRows        The total rows of the given values array
+ * @param  totalRows        The total rows of the given problem array
  * @param  precision        The precision to solve the problem to
  * @param  numProcessors    The number of processors being used to solve the
  *                          problem
@@ -17,7 +17,7 @@
  * @return                  0 if success, error code otherwise
  */
 int solve(
-    double ** const values,
+    double ** const problem,
     const int problemRows,
     const int totalRows,
     const double precision,

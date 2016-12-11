@@ -183,13 +183,13 @@ static int runSolve(
     }
 
     // Create problem array, including padding rows
-    double ** const values = createTwoDDoubleArray(totalRows, problemDimension);
+    double ** const problem = createTwoDDoubleArray(totalRows, problemDimension);
     // Load problem into problem array
-    fillProblemArray(values, problemDimension);
+    fillProblemArray(problem, problemDimension);
 
     // Fill padding rows with 0.0
     for (int row = problemDimension; row < totalRows; row++) {
-        memset(values[row], 0.0, problemDimension);
+        memset(problem[row], 0.0, problemDimension);
     }
 
     FILE * f;
@@ -209,11 +209,11 @@ static int runSolve(
 
         // Log input
         fprintf(f, "Input:\n");
-        write2dDoubleArray(f, values, problemDimension);
+        write2dDoubleArray(f, problem, problemDimension);
     }
 
     int error = solve(
-        values,
+        problem,
         problemDimension,
         totalRows,
         precision,
@@ -235,7 +235,7 @@ static int runSolve(
     if (isMainThread(rank)) {
         // Log solution
         fprintf(f, "Solution:\n");
-        write2dDoubleArray(f, values, problemDimension);
+        write2dDoubleArray(f, problem, problemDimension);
 
         fclose(f);
     }
@@ -253,7 +253,7 @@ static int runSolve(
 
         FILE * testFile = fopen(fileName, "w");
 
-        int res = testSolution(values, problemDimension, precision);
+        int res = testSolution(problem, problemDimension, precision);
 
         // Log input
         fprintf(
@@ -269,7 +269,7 @@ static int runSolve(
     }
 
     // Free memory
-    freeTwoDDoubleArray(values);
+    freeTwoDDoubleArray(problem);
 
     MPI_Comm_free(&running_comm);
 
