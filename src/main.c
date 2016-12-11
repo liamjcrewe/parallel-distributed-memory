@@ -185,15 +185,7 @@ static int runSolve(
     // Create problem array, including padding rows
     double ** const values = createTwoDDoubleArray(totalRows, problemDimension);
     // Load problem into problem array
-    const int result = fillProblemArray(values, problemDimension);
-
-    if (result == -1) {
-        if (isMainThread(rank)) {
-            printf(INVALID_PROBLEM_DIMENSION);
-        }
-
-        return -1;
-    }
+    fillProblemArray(values, problemDimension);
 
     // Fill padding rows with 0.0
     for (int row = problemDimension; row < totalRows; row++) {

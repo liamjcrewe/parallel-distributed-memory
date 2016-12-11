@@ -1,19 +1,4 @@
-/**
- * This file defines 5 set problems to be solved by the program. These were
- * randomly generated and contain doubles between 0 and 100. The problems are:
- *   1: 10 x 10
- *   2: 40 x 40
- *   3: 200 x 200
- *   4: 1000 x 1000
- *   5: 2000 x 2000
- *
- * It also defines functions to take a two dimensional array and fill it with
- * one of these problems.
- */
-
-#define BASE_DIMENSION 10
-
-static const double problem[BASE_DIMENSION][BASE_DIMENSION] = {
+static const double problem[10][10] = {
     {39.305479, 7.185631, 68.904397, 76.204575, 70.287806, 27.154123, 79.348461, 9.583932, 77.147911, 24.931782},
     {28.452752, 5.401047, 75.399205, 34.439732, 28.572773, 22.595287, 58.989926, 43.679843, 27.120158, 8.497783},
     {22.239443, 78.310198, 59.499364, 5.816251, 53.725788, 69.319290, 49.310187, 56.308894, 83.581101, 47.559062},
@@ -27,25 +12,20 @@ static const double problem[BASE_DIMENSION][BASE_DIMENSION] = {
 };
 
 /**
- * Fill the given two dimensional array with the values of the specified problem
+ * Fill the given two dimensional array with double values. Does this using a
+ * predefined 10x10 array of values, and repeating these values for the
+ * specified (problemDimension) number of times. Uses modular arithmetic to
+ * allow any problem dimension to be generated (does not have to be a multiple
+ * of 10).
  *
- * @param  values    The array to fill
- * @param  dimension TBA
- *
- * @return           0 if success, -1 if error
+ * @param  values           The array to fill
+ * @param  problemDimension The dimension of the array to fill
  */
 int fillProblemArray(double ** const values, const int problemDimension)
 {
-    if (problemDimension == -1) {
-        return -1;
-    }
-
     for (int row = 0; row < problemDimension; row++) {
         for (int col = 0; col < problemDimension; col++) {
-            values[row][col] =
-                problem[row % BASE_DIMENSION][col % BASE_DIMENSION];
+            values[row][col] = problem[row % 10][col % 10];
         }
     }
-
-    return 0;
 }

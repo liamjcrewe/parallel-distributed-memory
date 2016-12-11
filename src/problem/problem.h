@@ -1,9 +1,7 @@
 /**
- * Fill the given two dimensional array with the values of the specified problem
+ * Fill the given two dimensional array with double values.
  *
- * @param  values    The array to fill
- * @param  dimension TBA
- *
- * @return           0 if success, -1 if error
+ * @param  values           The array to fill
+ * @param  problemDimension The dimension of the array to fill
  */
-int fillProblemArray(double ** const values, const int dimension);
+void fillProblemArray(double ** const values, const int problemDimension);
