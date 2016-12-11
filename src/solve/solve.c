@@ -70,9 +70,9 @@ static int updateProblem(
  * Solve the given problem to the given precision in parallel, using the given
  * number of processors.
  *
- * @param  problem           The problem to solve (including padding rows)
- * @param  problemRows      The rows of the given problem array that are part of
- *                          the problem
+ * @param  problem          The problem to solve (including padding rows)
+ * @param  problemRows      The rows of the given problem array that are part
+ *                          of the problem
  * @param  totalRows        The total rows of the given problem array
  * @param  precision        The precision to solve the problem to
  * @param  numProcessors    The number of processors being used to solve the
