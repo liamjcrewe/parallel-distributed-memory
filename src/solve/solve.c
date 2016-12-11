@@ -6,7 +6,7 @@
 #include "../array/array.h"
 
 static void relaxRows(
-    double ** const newValues,
+    double ** const updatedProblem,
     const int problemDimension,
     const int startRowIndex,
     const int rowsToRelax,
@@ -27,21 +27,23 @@ static void relaxRows(
 
     for (int row = startRow; row < lastRow; row++) {
         for (int col = 1; col < problemDimension - 1; col++) {
-            newValue = (newValues[row + 1][col] + newValues[row - 1][col] +
-                        newValues[row][col + 1] + newValues[row][col - 1]) / 4;
+            newValue = (updatedProblem[row + 1][col] +
+                        updatedProblem[row - 1][col] +
+                        updatedProblem[row][col + 1] +
+                        updatedProblem[row][col - 1]) / 4;
 
-            if (fabs(newValue - newValues[row][col]) < precision) {
+            if (fabs(newValue - updatedProblem[row][col]) < precision) {
                 continue;
             }
 
-            newValues[row][col] = newValue;
+            updatedProblem[row][col] = newValue;
         }
     }
 }
 
 static int updateProblem(
     double ** const problem,
-    double ** const newValues,
+    double ** const updatedProblem,
     const int problemDimension
 )
 {
@@ -49,11 +51,11 @@ static int updateProblem(
 
     for (int row = 1; row < problemDimension - 1; row++) {
         for (int col = 1; col < problemDimension - 1; col++) {
-            if (problem[row][col] == newValues[row][col]) {
+            if (problem[row][col] == updatedProblem[row][col]) {
                 continue;
             }
 
-            problem[row][col] = newValues[row][col];
+            problem[row][col] = updatedProblem[row][col];
 
             if (solved) {
                 solved = 0;
@@ -93,11 +95,14 @@ int solve(
     MPI_Comm running_comm
 )
 {
-    double ** const newValues = createTwoDDoubleArray(totalRows, problemDimension);
+    double ** const updatedProblem = createTwoDDoubleArray(
+        totalRows,
+        problemDimension
+    );
 
     for (int i = 0; i < totalRows; i++) {
         for (int j = 0; j < problemDimension; j++) {
-            newValues[i][j] = problem[i][j];
+            updatedProblem[i][j] = problem[i][j];
         }
     }
 
@@ -133,7 +138,7 @@ int solve(
     while (!solved) {
         // startRowIndex is different for each process
         relaxRows(
-            newValues,
+            updatedProblem,
             problemDimension,
             startRowIndex,
             rowsPerProcessor,
@@ -141,10 +146,10 @@ int solve(
         );
 
         error = MPI_Allgatherv(
-            newValues[startRowIndex],
+            updatedProblem[startRowIndex],
             rowsPerProcessor * problemDimension,
             MPI_DOUBLE,
-            newValues[0],
+            updatedProblem[0],
             sendCounts,
             displs,
             subarrtype,
@@ -155,10 +160,10 @@ int solve(
             return error;
         }
 
-        solved = updateProblem(problem, newValues, problemDimension);
+        solved = updateProblem(problem, updatedProblem, problemDimension);
     }
 
-    freeTwoDDoubleArray(newValues);
+    freeTwoDDoubleArray(updatedProblem);
 
     MPI_Type_free(&subarrtype);
 
