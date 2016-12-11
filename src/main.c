@@ -9,8 +9,8 @@
 #include "test/test.h"
 
 #define HELP "Argument order:\n"\
-             " - Problem ID (1, 2, 3, 4, 5 or 6. See src/problem/problem.c).\n"\
-             " - Precision to work to.\n"\
+             " - Problem dimension (integer > 0).\n"\
+             " - Precision to work to (number > 0).\n"\
              " - Optional: [--test|-t] to test achieved solution.\n"
 
 #define INVALID_NUM_ARGS "You must specify problem dimension and precision.\n"
@@ -18,7 +18,8 @@
 #define INVALID_PROBLEM_DIMENSION "Invalid problem dimension given. "\
                                   "Must be an integer greater than 0.\n"
 
-#define INVALID_PRECISION "Precision must be a number greater than 0\n"
+#define INVALID_PRECISION "Invalid precision given. "\
+                          "Must be a number greater than 0\n"
 
 #define ERROR "Something went wrong. Error code: %d\n"
 
