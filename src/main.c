@@ -125,14 +125,15 @@ static int runSolve(
         numProcessors = problemDimension;
     }
 
+    // See if rows is divisible by number of processors
     int leftoverRows = problemDimension % numProcessors;
     int totalRows = problemDimension;
 
     int rowsPerProcessor = (problemDimension - leftoverRows) / numProcessors;
 
-    // if number of rows not divisible by number of processors, we need to pad
+    // If number of rows not divisible by number of processors, we need to pad
     if (leftoverRows) {
-        // we have leftover rows, so need to do one more row per processor
+        // We have leftover rows, so need to do one more row per processor
         rowsPerProcessor++;
 
         // Round number of rows to a multiple of rowsPerProcessor
@@ -172,6 +173,7 @@ static int runSolve(
 
     FILE * f;
 
+    // Open solution file and write input problem to file
     if (isMainThread(rank)) {
         char fileName[80];
         sprintf(
@@ -208,6 +210,7 @@ static int runSolve(
         printf(ERROR, error);
     }
 
+    // Write solution to file
     if (isMainThread(rank)) {
         // Log solution
         fprintf(f, "Solution:\n");
@@ -216,6 +219,7 @@ static int runSolve(
         fclose(f);
     }
 
+    // Test result and write result to file
     if (test) {
         char fileName[80];
         sprintf(
