@@ -123,39 +123,56 @@ int solve(
         problemDimension
     );
 
+    // Initially set updatedProblem to be the same as problem
     for (int i = 0; i < totalRows; i++) {
         for (int j = 0; j < problemDimension; j++) {
             updatedProblem[i][j] = problem[i][j];
         }
     }
 
-    int displs[numProcessors];
-    int sendCounts[numProcessors];
-
-    for (int i = 0; i < numProcessors; i++) {
-        sendCounts[i] = 1;
-        displs[i] = i * rowsPerProcessor;
-    }
-
-    const int startRowIndex = rank * rowsPerProcessor;
-
-    /* create a datatype to describe the subarrays of the global array */
-    int sizes[2]    = {totalRows, problemDimension};                 /* global size */
-    int subsizes[2] = {rowsPerProcessor, problemDimension};     /* local size */
-    int starts[2]   = {0, 0};                /* where this one starts */
-    MPI_Datatype type, subarrtype;
+    // Create subarray type to extract doubles from 2D problemArray
+    int totalSize[2] = {totalRows, problemDimension};
+    int processorSize[2] = {rowsPerProcessor, problemDimension};
+    int start[2]   = {0, 0};
+    MPI_Datatype type, subArrayType;
 
     int error;
 
-    error = MPI_Type_create_subarray(2, sizes, subsizes, starts, MPI_ORDER_C, MPI_DOUBLE, &type);
-    // Set extent to one row
-    error = MPI_Type_create_resized(type, 0, problemDimension * sizeof(double), &subarrtype);
-    error = MPI_Type_commit(&subarrtype);
+    error = MPI_Type_create_subarray(
+        2,
+        totalSize,
+        processorSize,
+        start,
+        MPI_ORDER_C,
+        MPI_DOUBLE,
+        &type
+    );
+
+    // Set extent to one row (n doubles)
+    error = MPI_Type_create_resized(
+        type,
+        0,
+        problemDimension * sizeof(double),
+        &subArrayType
+    );
+
+    error = MPI_Type_commit(&subArrayType);
 
     if (error) {
         return error;
     }
 
+    int displs[numProcessors];
+    int sendCounts[numProcessors];
+
+    for (int i = 0; i < numProcessors; i++) {
+        // Only sending one item of type 'subArrayType' from each processor
+        sendCounts[i] = 1;
+        // Extent is per row so displace each by number of rows per processor
+        displs[i] = i * rowsPerProcessor;
+    }
+
+    const int startRowIndex = rank * rowsPerProcessor;
     int solved = 0;
 
     while (!solved) {
@@ -168,14 +185,15 @@ int solve(
             precision
         );
 
+        // Gather relaxed in all processors, into updatedProblem array
         error = MPI_Allgatherv(
-            updatedProblem[startRowIndex],
-            rowsPerProcessor * problemDimension,
+            updatedProblem[startRowIndex], // start of data to send
+            rowsPerProcessor * problemDimension, // send this many doubles
             MPI_DOUBLE,
-            updatedProblem[0],
+            updatedProblem[0], // copy into here
             sendCounts,
             displs,
-            subarrtype,
+            subArrayType, // type received is our custom subarray type
             running_comm
         );
 
@@ -183,12 +201,13 @@ int solve(
             return error;
         }
 
+        // Everyone updates their problem and checks if solved (for termination)
         solved = updateProblem(problem, updatedProblem, problemDimension);
     }
 
     freeTwoDDoubleArray(updatedProblem);
 
-    MPI_Type_free(&subarrtype);
+    MPI_Type_free(&subArrayType);
 
     return 0;
 }
