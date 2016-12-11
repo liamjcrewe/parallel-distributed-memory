@@ -140,7 +140,7 @@ int solve(
         solved = updateValues(values, newValues, problemDimension);
     }
 
-    freeTwoDDoubleArray(newValues, totalRows);
+    freeTwoDDoubleArray(newValues);
 
     MPI_Type_free(&subarrtype);
 

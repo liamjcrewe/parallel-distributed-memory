@@ -277,7 +277,7 @@ static int runSolve(
     }
 
     // Free memory
-    freeTwoDDoubleArray(values, totalRows);
+    freeTwoDDoubleArray(values);
 
     MPI_Comm_free(&running_comm);
 

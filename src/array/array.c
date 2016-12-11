@@ -30,10 +30,9 @@ double **createTwoDDoubleArray(const int rows, const int cols)
  * Frees a given two dimensional array of doubles of the dimension specified.
  * Partners the above createTwoDDoubleArray function.
  *
- * @param array     The two dimensional array to free
- * @param rows   The number of rows in the two dimensional array to free
+ * @param array  The two dimensional array of doubles to free
  */
-void freeTwoDDoubleArray(double **array, const int rows)
+void freeTwoDDoubleArray(double **array)
 {
     free(&(array[0][0]));
 
