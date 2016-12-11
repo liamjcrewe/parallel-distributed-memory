@@ -114,12 +114,12 @@ void write2dDoubleArray(
 static int runSolve(
     const int problemDimension,
     const double precision,
-    int initialNumProcessors,
+    int maxProcessors,
     const int rank,
     const int test
 )
 {
-    int numProcessors = initialNumProcessors;
+    int numProcessors = maxProcessors;
 
     // This separates problem by rows, so cannot use more processes than rows
     if (numProcessors > problemDimension) {
