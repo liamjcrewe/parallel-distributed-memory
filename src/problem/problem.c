@@ -1,4 +1,4 @@
-static const double problem[10][10] = {
+static const double baseProblem[10][10] = {
     {39.305479, 7.185631, 68.904397, 76.204575, 70.287806, 27.154123, 79.348461, 9.583932, 77.147911, 24.931782},
     {28.452752, 5.401047, 75.399205, 34.439732, 28.572773, 22.595287, 58.989926, 43.679843, 27.120158, 8.497783},
     {22.239443, 78.310198, 59.499364, 5.816251, 53.725788, 69.319290, 49.310187, 56.308894, 83.581101, 47.559062},
@@ -26,7 +26,7 @@ void fillProblemArray(double ** const problem, const int problemDimension)
 {
     for (int row = 0; row < problemDimension; row++) {
         for (int col = 0; col < problemDimension; col++) {
-            problem[row][col] = problem[row % 10][col % 10];
+            problem[row][col] = baseProblem[row % 10][col % 10];
         }
     }
 }
