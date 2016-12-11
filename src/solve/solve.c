@@ -5,6 +5,16 @@
 
 #include "../array/array.h"
 
+/**
+ * Relax a subset of rows in the updatedProblem array
+ *
+ * @param updatedProblem   The array to perform relaxation on
+ * @param problemDimension The dimension of the problem array to perform
+ *                         relaxation on
+ * @param startRowIndex    The index of the first row to relax
+ * @param rowsToRelax      The number of rows to relax
+ * @param precision        The precision to relax values to
+ */
 static void relaxRows(
     double ** const updatedProblem,
     const int problemDimension,
@@ -41,6 +51,19 @@ static void relaxRows(
     }
 }
 
+/**
+ * Update the given problem to match the updatedProblem. Also checks if
+ * any value changes as it does this. If no values changed in the last pass, we
+ * know the solution is within precision, so we should terminate.
+ *
+ * @param  problem          The two dimensional problem array to update into
+ * @param  updatedProblem   The two dimensional updatedProblem array to update
+ *                          from
+ * @param  problemDimension The dimension of the problem arrays
+ *
+ * @return                  1 if no update was made (problem is within
+ *                          precision), 0 otherwise
+ */
 static int updateProblem(
     double ** const problem,
     double ** const updatedProblem,
