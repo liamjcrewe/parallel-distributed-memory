@@ -26,11 +26,11 @@
 #define MPI_ERROR "Something went wrong with MPI. Error code: %d\n"
 
 /**
- * Checks if the given processorId is the 'main' thread (rank 0)
+ * Checks if the given processorId is the 'main' thread (rank 0).
  *
  * @param  rank   The id of the process to check
  *
- * @return             1 if main (rank is 0), 0 otherwise
+ * @return        1 if main (rank is 0), 0 otherwise
  */
 static int isMainThread(const int rank)
 {
@@ -38,7 +38,7 @@ static int isMainThread(const int rank)
 }
 
 /**
- * Checks if any of the parameters passed via CLI are --help or -h
+ * Checks if any of the parameters passed via CLI are --help or -h.
  *
  * @param  argc Number of command line argmuments
  * @param  argv Array of command line arguments
@@ -59,7 +59,7 @@ static int helpFlagSet(int argc, char *argv[])
 }
 
 /**
- * Checks if any of the parameters passed via CLI are --test or -t
+ * Checks if any of the parameters passed via CLI are --test or -t.
  *
  * @param  argc Number of command line argmuments
  * @param  argv Array of command line arguments
@@ -79,6 +79,16 @@ static int testFlagSet(int argc, char *argv[])
     return 0;
 }
 
+/**
+ * Round input to the first value greater than input that is divisble by given
+ * multiple.
+ *
+ * @param  input    Value to round
+ * @param  multiple Value that returned value should be divisible by
+ *
+ * @return          First value greater than input that is divisible by given
+ *                  multiple
+ */
 static int roundToMultiple(const int input, const int multiple)
 {
     const int remainder = input % multiple;
@@ -91,7 +101,7 @@ static int roundToMultiple(const int input, const int multiple)
 }
 
 /**
- * Write a two dimensional array of doubles to a given file
+ * Write a two dimensional array of doubles to a given file.
  *
  * @param f                File handle to write to
  * @param array            Two dimensional array of doubles to write to file
@@ -111,6 +121,24 @@ void write2dDoubleArray(
     }
 }
 
+/**
+ * Generate, set up and run solve on a problem of problemDimension size to the
+ * given precision.
+ *
+ * Carries out various set up features such as selecting optimimum number of
+ * processors, padding of problem so that every processor can be assigned the
+ * same amount of rows. Also outputs solution to file, and allows solution to
+ * be tested (and the result written to file) for correctness testing.
+ *
+ * @param  problemDimension  Dimension of problem to generate and solve
+ * @param  precision         Precision to solve generated problem to
+ * @param  maxProcessors     Maximum number of processors allows
+ * @param  rank              Rank of processor calling this function
+ * @param  test              Flag to say whether to test the solution and write
+ *                           test result to file
+ *
+ * @return                   0 if success, error code otherwise
+ */
 static int runSolve(
     const int problemDimension,
     const double precision,
@@ -257,15 +285,15 @@ static int runSolve(
 }
 
 /**
- * Main function. Runs simple CLI tool that allows --help/-h, and reports an
- * error if not enough/too many command line parameters are passed.
+ * Main function. Runs simple CLI too with help/error checking, and parses
+ * CLI arguments.
  *
- * Initialises and sets up MPI, and calls runSolve to start solving of the
- * given problem.
+ * Initialises and sets up MPI, and calls runSolve to generate and solve the
+ * problem.
  *
  * @param  argc Number of command line arguments
  * @param  argv Array of command line arguments
- * @return      0 if success, -1 if error.
+ * @return      0 if success, error code otherwise
  */
 
 int main(int argc, char *argv[])
