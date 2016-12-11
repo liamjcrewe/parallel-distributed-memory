@@ -202,7 +202,7 @@ static int runSolve(
             "./output/solution-%d-%g-%d.txt",
             problemDimension,
             precision,
-            initialNumProcessors
+            maxProcessors
         );
 
         f = fopen(fileName, "w");
@@ -248,7 +248,7 @@ static int runSolve(
             "./output/test-%d-%g-%d.txt",
             problemDimension,
             precision,
-            initialNumProcessors
+            maxProcessors
         );
 
         FILE * testFile = fopen(fileName, "w");
@@ -261,7 +261,7 @@ static int runSolve(
             "Dimension: %d, Precision: %g, Processors: %d, Result: %s.\n",
             problemDimension,
             precision,
-            initialNumProcessors,
+            maxProcessors,
             res ? "Pass" : "Fail"
         );
 
