@@ -22,7 +22,7 @@ static const double problem[10][10] = {
  * @param  problem          The array to fill
  * @param  problemDimension The dimension of the array to fill
  */
-int fillProblemArray(double ** const problem, const int problemDimension)
+void fillProblemArray(double ** const problem, const int problemDimension)
 {
     for (int row = 0; row < problemDimension; row++) {
         for (int col = 0; col < problemDimension; col++) {
