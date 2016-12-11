@@ -1,5 +1,5 @@
 /**
- * Create a square two dimensional array of doubles of the dimension specified.
+ * Create a square two dimensional array of doubles of the dimensions specified.
  *
  * @param  rows      Number of rows in double array to be created
  * @param  cols      Number of columns in double array to be created
