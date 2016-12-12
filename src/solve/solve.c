@@ -190,7 +190,7 @@ int solve(
             updatedProblem[startRowIndex], // start of data to send
             rowsPerProcessor * problemDimension, // send this many doubles
             MPI_DOUBLE,
-            updatedProblem[0], // copy into here
+            updatedProblem[0], // receive into here
             sendCounts,
             displs,
             subArrayType, // type received is our custom subarray type

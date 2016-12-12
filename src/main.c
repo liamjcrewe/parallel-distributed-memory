@@ -127,7 +127,7 @@ void write2dDoubleArray(
  *
  * Carries out various set up features such as selecting optimimum number of
  * processors, padding of problem so that every processor can be assigned the
- * same amount of rows, as this is required by solve.
+ * same amount of rows, as this is required by the implementation of solve.
  *
  * Also outputs solution to file, and allows solution to
  * be tested (and the result written to file) for correctness testing.
