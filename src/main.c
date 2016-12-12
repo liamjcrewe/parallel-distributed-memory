@@ -4,7 +4,6 @@
 #include <mpi.h>
 
 #include "array/array.h"
-#include "output/output.h"
 #include "problem/problem.h"
 #include "solve/solve.h"
 #include "test/test.h"
@@ -88,6 +87,27 @@ static int roundToMultiple(const int input, const int multiple)
     }
 
     return input + multiple - remainder;
+}
+
+/**
+ * Write a two dimensional array of doubles to a given file
+ *
+ * @param f                File handle to write to
+ * @param array            Two dimensional array of doubles to write to file
+ * @param problemDimension Dimension of array
+ */
+void write2dDoubleArray(
+    FILE * const f,
+    double ** const array,
+    const int problemDimension
+)
+{
+    for (int row = 0; row < problemDimension; ++row) {
+        for (int col = 0; col < problemDimension; ++col) {
+            fprintf(f, "%10f ", array[row][col]);
+        }
+        fputs("\n", f);
+    }
 }
 
 static int runSolve(
