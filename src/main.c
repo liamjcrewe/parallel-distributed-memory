@@ -122,12 +122,14 @@ void write2dDoubleArray(
 }
 
 /**
- * Generate, set up and run solve on a problem of problemDimension size to the
- * given precision.
+ * Generate, set up and run solve on a problem of problemDimension size with
+ * the given precision.
  *
  * Carries out various set up features such as selecting optimimum number of
  * processors, padding of problem so that every processor can be assigned the
- * same amount of rows. Also outputs solution to file, and allows solution to
+ * same amount of rows, as this is required by solve.
+ *
+ * Also outputs solution to file, and allows solution to
  * be tested (and the result written to file) for correctness testing.
  *
  * @param  problemDimension  Dimension of problem to generate and solve
