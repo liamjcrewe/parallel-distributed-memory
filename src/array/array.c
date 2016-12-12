@@ -1,9 +1,12 @@
 #include <stdlib.h>
 
 /**
- * Create a square two dimensional array of doubles of the dimension specified.
- * Uses malloc, should always be followed later in the calling code with
- * freeTwoDDoubleArray.
+ * Create a square two dimensional array of doubles of the dimensions
+ * specified. Creates these in a specific way so that all doubles are
+ * contiguous in memory.
+ *
+ * Note: freeTwoDDoubleArray should always be called on the returned array to
+ * clean up memory.
  *
  * @param  rows      Number of rows in double array to be created
  * @param  cols      Number of columns in double array to be created
@@ -25,11 +28,11 @@ double **createTwoDDoubleArray(const int rows, const int cols)
 
 /**
  * Frees a given two dimensional array of doubles of the dimension specified.
+ * Partners the above createTwoDDoubleArray function.
  *
- * @param array     The two dimensional array to free
- * @param rows   The number of rows in the two dimensional array to free
+ * @param array  The two dimensional array of doubles to free
  */
-void freeTwoDDoubleArray(double **array, const int rows)
+void freeTwoDDoubleArray(double **array)
 {
     free(&(array[0][0]));
 

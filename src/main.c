@@ -9,8 +9,8 @@
 #include "test/test.h"
 
 #define HELP "Argument order:\n"\
-             " - Problem ID (1, 2, 3, 4, 5 or 6. See src/problem/problem.c).\n"\
-             " - Precision to work to.\n"\
+             " - Problem dimension (integer > 0).\n"\
+             " - Precision to work to (number > 0).\n"\
              " - Optional: [--test|-t] to test achieved solution.\n"
 
 #define INVALID_NUM_ARGS "You must specify problem dimension and precision.\n"
@@ -18,18 +18,19 @@
 #define INVALID_PROBLEM_DIMENSION "Invalid problem dimension given. "\
                                   "Must be an integer greater than 0.\n"
 
-#define INVALID_PRECISION "Precision must be a number greater than 0\n"
+#define INVALID_PRECISION "Invalid precision given. "\
+                          "Must be a number greater than 0\n"
 
 #define ERROR "Something went wrong. Error code: %d\n"
 
 #define MPI_ERROR "Something went wrong with MPI. Error code: %d\n"
 
 /**
- * Checks if the given processorId is the 'main' thread (rank 0)
+ * Checks if the given processorId is the 'main' thread (rank 0).
  *
  * @param  rank   The id of the process to check
  *
- * @return             1 if main (rank is 0), 0 otherwise
+ * @return        1 if main (rank is 0), 0 otherwise
  */
 static int isMainThread(const int rank)
 {
@@ -37,7 +38,7 @@ static int isMainThread(const int rank)
 }
 
 /**
- * Checks if any of the parameters passed via CLI are --help or -h
+ * Checks if any of the parameters passed via CLI are --help or -h.
  *
  * @param  argc Number of command line argmuments
  * @param  argv Array of command line arguments
@@ -58,7 +59,7 @@ static int helpFlagSet(int argc, char *argv[])
 }
 
 /**
- * Checks if any of the parameters passed via CLI are --test or -t
+ * Checks if any of the parameters passed via CLI are --test or -t.
  *
  * @param  argc Number of command line argmuments
  * @param  argv Array of command line arguments
@@ -78,6 +79,16 @@ static int testFlagSet(int argc, char *argv[])
     return 0;
 }
 
+/**
+ * Round input to the first value greater than input that is divisble by given
+ * multiple.
+ *
+ * @param  input    Value to round
+ * @param  multiple Value that returned value should be divisible by
+ *
+ * @return          First value greater than input that is divisible by given
+ *                  multiple
+ */
 static int roundToMultiple(const int input, const int multiple)
 {
     const int remainder = input % multiple;
@@ -90,7 +101,7 @@ static int roundToMultiple(const int input, const int multiple)
 }
 
 /**
- * Write a two dimensional array of doubles to a given file
+ * Write a two dimensional array of doubles to a given file.
  *
  * @param f                File handle to write to
  * @param array            Two dimensional array of doubles to write to file
@@ -110,29 +121,48 @@ void write2dDoubleArray(
     }
 }
 
+/**
+ * Generate, set up and run solve on a problem of problemDimension size to the
+ * given precision.
+ *
+ * Carries out various set up features such as selecting optimimum number of
+ * processors, padding of problem so that every processor can be assigned the
+ * same amount of rows. Also outputs solution to file, and allows solution to
+ * be tested (and the result written to file) for correctness testing.
+ *
+ * @param  problemDimension  Dimension of problem to generate and solve
+ * @param  precision         Precision to solve generated problem to
+ * @param  maxProcessors     Maximum number of processors allows
+ * @param  rank              Rank of processor calling this function
+ * @param  test              Flag to say whether to test the solution and write
+ *                           test result to file
+ *
+ * @return                   0 if success, error code otherwise
+ */
 static int runSolve(
     const int problemDimension,
     const double precision,
-    int initialNumProcessors,
+    int maxProcessors,
     const int rank,
     const int test
 )
 {
-    int numProcessors = initialNumProcessors;
+    int numProcessors = maxProcessors;
 
     // This separates problem by rows, so cannot use more processes than rows
     if (numProcessors > problemDimension) {
         numProcessors = problemDimension;
     }
 
+    // See if rows is divisible by number of processors
     int leftoverRows = problemDimension % numProcessors;
     int totalRows = problemDimension;
 
     int rowsPerProcessor = (problemDimension - leftoverRows) / numProcessors;
 
-    // if number of rows not divisible by number of processors, we need to pad
+    // If number of rows not divisible by number of processors, we need to pad
     if (leftoverRows) {
-        // we have leftover rows, so need to do one more row per processor
+        // We have leftover rows, so need to do one more row per processor
         rowsPerProcessor++;
 
         // Round number of rows to a multiple of rowsPerProcessor
@@ -153,25 +183,18 @@ static int runSolve(
     }
 
     // Create problem array, including padding rows
-    double ** const values = createTwoDDoubleArray(totalRows, problemDimension);
+    double ** const problem = createTwoDDoubleArray(totalRows, problemDimension);
     // Load problem into problem array
-    const int result = fillProblemArray(values, problemDimension);
-
-    if (result == -1) {
-        if (isMainThread(rank)) {
-            printf(INVALID_PROBLEM_DIMENSION);
-        }
-
-        return -1;
-    }
+    fillProblemArray(problem, problemDimension);
 
     // Fill padding rows with 0.0
     for (int row = problemDimension; row < totalRows; row++) {
-        memset(values[row], 0.0, problemDimension);
+        memset(problem[row], 0.0, problemDimension);
     }
 
     FILE * f;
 
+    // Open solution file and write input problem to file
     if (isMainThread(rank)) {
         char fileName[80];
         sprintf(
@@ -179,18 +202,18 @@ static int runSolve(
             "./output/solution-%d-%g-%d.txt",
             problemDimension,
             precision,
-            initialNumProcessors
+            maxProcessors
         );
 
         f = fopen(fileName, "w");
 
         // Log input
         fprintf(f, "Input:\n");
-        write2dDoubleArray(f, values, problemDimension);
+        write2dDoubleArray(f, problem, problemDimension);
     }
 
     int error = solve(
-        values,
+        problem,
         problemDimension,
         totalRows,
         precision,
@@ -208,14 +231,16 @@ static int runSolve(
         printf(ERROR, error);
     }
 
+    // Write solution to file
     if (isMainThread(rank)) {
         // Log solution
         fprintf(f, "Solution:\n");
-        write2dDoubleArray(f, values, problemDimension);
+        write2dDoubleArray(f, problem, problemDimension);
 
         fclose(f);
     }
 
+    // Test result and write result to file
     if (test) {
         char fileName[80];
         sprintf(
@@ -223,12 +248,12 @@ static int runSolve(
             "./output/test-%d-%g-%d.txt",
             problemDimension,
             precision,
-            initialNumProcessors
+            maxProcessors
         );
 
         FILE * testFile = fopen(fileName, "w");
 
-        int res = testSolution(values, problemDimension, precision);
+        int res = testSolution(problem, problemDimension, precision);
 
         // Log input
         fprintf(
@@ -236,7 +261,7 @@ static int runSolve(
             "Dimension: %d, Precision: %g, Processors: %d, Result: %s.\n",
             problemDimension,
             precision,
-            initialNumProcessors,
+            maxProcessors,
             res ? "Pass" : "Fail"
         );
 
@@ -244,7 +269,7 @@ static int runSolve(
     }
 
     // Free memory
-    freeTwoDDoubleArray(values, totalRows);
+    freeTwoDDoubleArray(problem);
 
     MPI_Comm_free(&running_comm);
 
@@ -252,15 +277,15 @@ static int runSolve(
 }
 
 /**
- * Main function. Runs simple CLI tool that allows --help/-h, and reports an
- * error if not enough/too many command line parameters are passed.
+ * Main function. Runs simple CLI too with help/error checking, and parses
+ * CLI arguments.
  *
- * Initialises and sets up MPI, and calls runSolve to start solving of the
- * given problem.
+ * Initialises and sets up MPI, and calls runSolve to generate and solve the
+ * problem.
  *
  * @param  argc Number of command line arguments
  * @param  argv Array of command line arguments
- * @return      0 if success, -1 if error.
+ * @return      0 if success, error code otherwise
  */
 
 int main(int argc, char *argv[])
